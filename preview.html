@@ -1,0 +1,998 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REFLEX LAB</title>
+<style>
+:root {
+  --bg: #0b0d12;
+  --panel: #141821;
+  --panel2: #1a202b;
+  --line: #293140;
+  --text: #f2f5fa;
+  --muted: #8c97a8;
+  --accent: #a5f36b;
+  --accent2: #68d9c0;
+  --red: #ff7272;
+  --yellow: #ffd166;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, Arial, sans-serif;
+}
+button, select { font: inherit; }
+button {
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 16px;
+  background: var(--panel2);
+  color: var(--text);
+  transition: .15s ease;
+}
+button:hover { border-color: var(--accent); transform: translateY(-1px); }
+button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.primary {
+  background: var(--accent);
+  color: #11170c;
+  border-color: var(--accent);
+  font-weight: 800;
+}
+.danger { color: var(--red); }
+header {
+  max-width: 1200px;
+  margin: auto;
+  padding: 28px 22px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.brand { font-size: 24px; font-weight: 900; letter-spacing: 3px; }
+.brand span { color: var(--accent); }
+.header-note { color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+main { max-width: 1200px; margin: auto; padding: 12px 22px 60px; }
+h1 { font-size: clamp(28px, 5vw, 44px); margin: 14px 0 8px; }
+h2 { font-size: 19px; margin: 0 0 16px; }
+h3 { font-size: 14px; margin: 0 0 12px; color: var(--muted); }
+p { color: var(--muted); line-height: 1.6; }
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0 18px;
+}
+.tab.active { background: var(--accent); color: #11170c; border-color: var(--accent); font-weight: 800; }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(230px, .8fr);
+  gap: 18px;
+}
+.game-stage {
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #0f131b;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  user-select: none;
+}
+.stage-message { font-size: clamp(20px, 4vw, 30px); font-weight: 800; margin: 10px 0; }
+.stage-sub { color: var(--muted); font-size: 14px; }
+.reaction-pad {
+  width: 100%;
+  max-width: 500px;
+  min-height: 155px;
+  border-radius: 14px;
+  border: 2px solid #465164;
+  background: #202938;
+  margin: 22px 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  cursor: pointer;
+}
+.reaction-pad.waiting { background: #202938; }
+.reaction-pad.go { background: #a5f36b; color: #10160c; border-color: #a5f36b; }
+.reaction-pad.false { background: #ff7272; color: #220909; border-color: #ff7272; }
+.target-area {
+  width: 100%;
+  max-width: 500px;
+  height: 200px;
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #151c28;
+  margin: 18px 0 8px;
+  overflow: hidden;
+}
+.target {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #e9ffd9;
+  box-shadow: 0 0 18px #a5f36b55;
+  cursor: crosshair;
+}
+.shape-area {
+  width: 100%;
+  max-width: 500px;
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin: 18px 0;
+}
+.shape {
+  width: 90px;
+  height: 90px;
+  background: var(--accent);
+}
+.shape.circle { border-radius: 50%; }
+.shape.square { border-radius: 8px; }
+.shape.triangle {
+  width: 0;
+  height: 0;
+  background: transparent;
+  border-left: 50px solid transparent;
+  border-right: 50px solid transparent;
+  border-bottom: 90px solid var(--accent);
+}
+.choice-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.side-stat {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat {
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+.stat strong { display: block; font-size: 24px; margin-top: 5px; }
+.stat small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.metric {
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.metric .value { font-size: 27px; font-weight: 850; margin-top: 8px; }
+.metric .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+select {
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px;
+}
+canvas {
+  width: 100%;
+  height: 260px;
+  display: block;
+}
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 550px; }
+th, td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; }
+.empty { text-align: center; color: var(--muted); padding: 28px; }
+.notice { color: var(--muted); font-size: 12px; margin-top: 10px; }
+.feedback { min-height: 22px; font-weight: 700; margin-top: 10px; }
+.good { color: var(--accent); }
+.bad { color: var(--red); }
+.hidden { display: none !important; }
+footer { color: var(--muted); text-align: center; padding: 20px; font-size: 12px; }
+@media (max-width: 760px) {
+  .game-layout { grid-template-columns: 1fr; }
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  header { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 420px) {
+  main { padding-left: 12px; padding-right: 12px; }
+  .panel { padding: 15px; }
+  .metrics { gap: 8px; }
+  .metric { padding: 12px; }
+  .metric .value { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="brand">REFLEX <span>LAB</span></div>
+    <div class="header-note">REACTION TRAINING SYSTEM</div>
+  </div>
+  <div class="header-note">PERSÖNLICHES TRAININGSPROFIL</div>
+</header>
+
+<main>
+  <h1>Trainiere deine Reaktionszeit.</h1>
+  <p>Starte eine Übung, sammle Messwerte und verfolge deine Entwicklung über einzelne Trainingseinheiten hinweg.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-game="reaction">Lichtsignal</button>
+    <button class="tab" data-game="precision">Zielpunkt</button>
+    <button class="tab" data-game="shapes">Formenerkennung</button>
+  </div>
+
+  <section class="game-layout">
+    <div class="panel">
+      <div id="gameTitle"><h2>Lichtsignal</h2></div>
+
+      <div id="reactionGame" class="game-stage">
+        <div class="stage-sub">REAKTIONSÜBUNG</div>
+        <div class="stage-message" id="reactionMessage">Bereit?</div>
+        <div class="stage-sub" id="reactionHint">Starte die Runde und warte auf das grüne Signal.</div>
+        <div id="reactionPad" class="reaction-pad waiting">STARTEN</div>
+        <div class="stage-sub">Klicke erst, wenn das Feld grün wird.</div>
+      </div>
+
+      <div id="precisionGame" class="game-stage hidden">
+        <div class="stage-sub">ZIELGENAUIGKEIT</div>
+        <div class="stage-message" id="precisionMessage">Treffe den Zielpunkt.</div>
+        <div class="stage-sub" id="precisionHint">Fünf Ziele pro Trainingseinheit.</div>
+        <div class="target-area" id="targetArea"></div>
+        <div class="stage-sub" id="precisionProgress">0 / 5 Treffer</div>
+      </div>
+
+      <div id="shapesGame" class="game-stage hidden">
+        <div class="stage-sub">FORMENERKENNUNG</div>
+        <div class="stage-message" id="shapeMessage">Welche Form siehst du?</div>
+        <div class="stage-sub" id="shapeHint">Erkenne die angezeigte Form so schnell wie möglich.</div>
+        <div class="shape-area" id="shapeArea"></div>
+        <div class="choice-row">
+          <button class="shapeChoice" data-shape="circle">Kreis</button>
+          <button class="shapeChoice" data-shape="square">Quadrat</button>
+          <button class="shapeChoice" data-shape="triangle">Dreieck</button>
+        </div>
+        <div class="stage-sub" id="shapeProgress">0 / 5 richtige Antworten</div>
+      </div>
+
+      <div class="feedback" id="gameFeedback"></div>
+      <div class="controls">
+        <button class="primary" id="startButton">Training starten</button>
+        <button id="stopButton" disabled>Abbrechen</button>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <h2>Spielstatistik</h2>
+      <div class="side-stat">
+        <div class="stat"><small>Durchschnitt</small><strong id="gameAverage">–</strong></div>
+        <div class="stat"><small>Bestzeit</small><strong id="gameBest">–</strong></div>
+        <div class="stat"><small>Versuche</small><strong id="gameAttempts">0</strong></div>
+        <div class="stat"><small>Einheiten</small><strong id="gameSessions">0</strong></div>
+      </div>
+      <p class="notice">Die Werte beziehen sich auf das aktuell ausgewählte Spiel.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Gesamtübersicht</h2>
+    <div class="metrics">
+      <div class="metric"><div class="label">Alle Versuche</div><div class="value" id="totalAttempts">0</div></div>
+      <div class="metric"><div class="label">Gesamtdurchschnitt</div><div class="value" id="totalAverage">–</div></div>
+      <div class="metric"><div class="label">Persönlicher Rekord</div><div class="value" id="totalBest">–</div></div>
+      <div class="metric"><div class="label">Trainingseinheiten</div><div class="value" id="totalSessions">0</div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head">
+      <div>
+        <h2>Fortschritt</h2>
+        <div class="stage-sub">Durchschnittliche Reaktionszeit pro abgeschlossener Trainingseinheit</div>
+      </div>
+      <div>
+        <select id="chartGame">
+          <option value="all">Alle Spiele</option>
+          <option value="reaction">Lichtsignal</option>
+          <option value="precision">Zielpunkt</option>
+          <option value="shapes">Formenerkennung</option>
+        </select>
+        <select id="chartRange">
+          <option value="all">Gesamter Zeitraum</option>
+          <option value="day">Heute</option>
+          <option value="week">Letzte 7 Tage</option>
+          <option value="month">Letzte 30 Tage</option>
+        </select>
+      </div>
+    </div>
+    <canvas id="progressChart"></canvas>
+    <div class="notice">Niedrigere Werte bedeuten schnellere Reaktionen. Jede Markierung steht für eine abgeschlossene Trainingseinheit.</div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head">
+      <h2>Statistiken pro Spiel</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Spiel</th><th>Versuche</th><th>Einheiten</th><th>Durchschnitt</th><th>Bestzeit</th></tr></thead>
+        <tbody id="gameStats"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head">
+      <div>
+        <h2>Letzte Ergebnisse</h2>
+        <div class="stage-sub">Die neuesten 30 Versuche. Ältere Ergebnisse bleiben gespeichert.</div>
+      </div>
+      <div class="controls">
+        <button id="exportButton">CSV exportieren</button>
+        <button class="danger" id="resetButton">Alle Daten löschen</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Datum und Uhrzeit</th><th>Spiel</th><th>Reaktionszeit</th><th>Einheit</th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+    <div class="notice">Die Daten werden lokal in diesem Browser gespeichert. CSV-Export sichert alle Versuche und Trainingseinheiten.</div>
+    <div class="feedback" id="storageStatus"></div>
+  </section>
+</main>
+
+<footer>REFLEX LAB · REAKTIONS- UND WAHRNEHMUNGSTRAINING</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  const STORAGE_KEY = "reflexLabData";
+  const GAME_NAMES = {
+    reaction: "Lichtsignal",
+    precision: "Zielpunkt",
+    shapes: "Formenerkennung"
+  };
+
+  let data = {
+    version: 2,
+    results: [],
+    sessions: []
+  };
+
+  let currentGame = "reaction";
+  let running = false;
+  let sessionId = null;
+  let roundTimes = [];
+  let roundCount = 0;
+  let reactionPhase = "idle";
+  let reactionTimer = null;
+  let reactionStartedAt = 0;
+  let targetStartedAt = 0;
+  let shapeStartedAt = 0;
+  let shapeCorrect = 0;
+  let currentShape = null;
+  let targetCount = 0;
+  let targetElement = null;
+
+  const $ = id => document.getElementById(id);
+
+  function makeId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+  }
+
+  function normalizeGame(value) {
+    const v = String(value || "").toLowerCase();
+    if (v.includes("reaction") || v.includes("green") || v.includes("licht")) return "reaction";
+    if (v.includes("precision") || v.includes("spot") || v.includes("ziel")) return "precision";
+    if (v.includes("shape") || v.includes("form")) return "shapes";
+    return null;
+  }
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        data.results = Array.isArray(parsed.results) ? parsed.results : [];
+        data.sessions = Array.isArray(parsed.sessions) ? parsed.sessions : [];
+        data.results = data.results.map(item => {
+          const gameKey = item.gameKey || normalizeGame(item.game);
+          return {
+            ...item,
+            id: item.id || makeId(),
+            gameKey,
+            gameName: GAME_NAMES[gameKey] || item.gameName || item.game || "Unbekannt",
+            timestamp: item.timestamp || item.date || new Date().toISOString(),
+            ms: Number(item.ms ?? item.time ?? item.reactionTime)
+          };
+        }).filter(item => item.gameKey && Number.isFinite(item.ms) && item.ms > 0);
+
+        data.sessions = data.sessions.map(item => ({
+          ...item,
+          id: item.id || makeId(),
+          gameKey: item.gameKey || normalizeGame(item.game),
+          timestamp: item.timestamp || item.date || new Date().toISOString(),
+          average: Number(item.average),
+          best: Number(item.best),
+          count: Number(item.count || 0)
+        })).filter(item => item.gameKey && Number.isFinite(item.average));
+      } else {
+        // Migration älterer REFLEX-LAB-Daten aus dem bisherigen Speicherformat.
+        const oldRaw = localStorage.getItem("reflexLab");
+        if (oldRaw) {
+          const old = JSON.parse(oldRaw);
+          const oldResults = Array.isArray(old.results) ? old.results : [];
+          data.results = oldResults.map(item => {
+            const gameKey = normalizeGame(item.game || item.gameName);
+            const ms = Number(item.ms ?? item.time ?? item.reactionTime);
+            return {
+              id: item.id || makeId(),
+              gameKey,
+              gameName: GAME_NAMES[gameKey] || "Unbekannt",
+              ms,
+              timestamp: item.timestamp || item.date || new Date().toISOString(),
+              sessionId: item.sessionId || "importiert"
+            };
+          }).filter(item => item.gameKey && Number.isFinite(item.ms) && item.ms > 0);
+          saveData();
+        }
+      }
+    } catch (error) {
+      console.error("Gespeicherte Daten konnten nicht vollständig geladen werden:", error);
+      $("storageStatus").textContent = "Hinweis: Gespeicherte Daten konnten nicht vollständig gelesen werden.";
+      $("storageStatus").className = "feedback bad";
+    }
+  }
+
+  function saveData() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      $("storageStatus").textContent = "Speicherung aktiv · Alle Ergebnisse bleiben lokal erhalten.";
+      $("storageStatus").className = "feedback good";
+      return true;
+    } catch (error) {
+      console.error("Speichern fehlgeschlagen:", error);
+      $("storageStatus").textContent = "Speicherfehler: Der Browser konnte die Daten nicht speichern. Exportiere deine Daten als CSV.";
+      $("storageStatus").className = "feedback bad";
+      return false;
+    }
+  }
+
+  function formatMs(value) {
+    return Number.isFinite(value) ? Math.round(value) + " ms" : "–";
+  }
+
+  function formatDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Unbekannt";
+    return date.toLocaleString("de-DE", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+  }
+
+  function resultsFor(game) {
+    return data.results.filter(item => game === "all" || item.gameKey === game);
+  }
+
+  function sessionsFor(game) {
+    return data.sessions.filter(item => game === "all" || item.gameKey === game);
+  }
+
+  function average(items) {
+    if (!items.length) return NaN;
+    return items.reduce((sum, item) => sum + item.ms, 0) / items.length;
+  }
+
+  function best(items) {
+    if (!items.length) return NaN;
+    return Math.min(...items.map(item => item.ms));
+  }
+
+  function renderGameStats() {
+    const results = resultsFor(currentGame);
+    const sessions = sessionsFor(currentGame);
+    $("gameAverage").textContent = formatMs(average(results));
+    $("gameBest").textContent = formatMs(best(results));
+    $("gameAttempts").textContent = results.length;
+    $("gameSessions").textContent = sessions.length;
+  }
+
+  function renderOverview() {
+    const all = data.results;
+    $("totalAttempts").textContent = all.length;
+    $("totalAverage").textContent = formatMs(average(all));
+    $("totalBest").textContent = formatMs(best(all));
+    $("totalSessions").textContent = data.sessions.length;
+
+    $("gameStats").innerHTML = Object.entries(GAME_NAMES).map(([key, name]) => {
+      const items = resultsFor(key);
+      const sessions = sessionsFor(key);
+      return `<tr>
+        <td>${name}</td>
+        <td>${items.length}</td>
+        <td>${sessions.length}</td>
+        <td>${formatMs(average(items))}</td>
+        <td>${formatMs(best(items))}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderHistory() {
+    const recent = [...data.results]
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 30);
+
+    if (!recent.length) {
+      $("historyBody").innerHTML = '<tr><td colspan="4" class="empty">Noch keine Ergebnisse vorhanden.</td></tr>';
+      return;
+    }
+
+    $("historyBody").innerHTML = recent.map(item => `
+      <tr>
+        <td>${formatDate(item.timestamp)}</td>
+        <td>${GAME_NAMES[item.gameKey] || "Unbekannt"}</td>
+        <td>${formatMs(item.ms)}</td>
+        <td>${String(item.sessionId || "").slice(0, 12)}</td>
+      </tr>
+    `).join("");
+  }
+
+  function renderChart() {
+    const canvas = $("progressChart");
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(300, rect.width);
+    const height = 260;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+
+    const game = $("chartGame").value;
+    const range = $("chartRange").value;
+    const now = new Date();
+    let items = sessionsFor(game).slice();
+
+    if (range === "day") {
+      items = items.filter(item => new Date(item.timestamp).toDateString() === now.toDateString());
+    } else if (range === "week") {
+      const cutoff = now.getTime() - 7 * 86400000;
+      items = items.filter(item => new Date(item.timestamp).getTime() >= cutoff);
+    } else if (range === "month") {
+      const cutoff = now.getTime() - 30 * 86400000;
+      items = items.filter(item => new Date(item.timestamp).getTime() >= cutoff);
+    }
+
+    items.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    const left = 52, right = 16, top = 18, bottom = 42;
+    const chartW = width - left - right;
+    const chartH = height - top - bottom;
+
+    ctx.font = "11px system-ui";
+    ctx.fillStyle = "#8c97a8";
+    ctx.strokeStyle = "#293140";
+    ctx.lineWidth = 1;
+
+    if (!items.length) {
+      ctx.textAlign = "center";
+      ctx.fillText("Noch keine abgeschlossenen Trainingseinheiten", width / 2, height / 2);
+      return;
+    }
+
+    const values = items.map(item => item.average);
+    let min = Math.max(0, Math.floor(Math.min(...values) / 50) * 50 - 50);
+    let max = Math.ceil(Math.max(...values) / 50) * 50 + 50;
+    if (max <= min) max = min + 100;
+
+    for (let i = 0; i <= 4; i++) {
+      const y = top + chartH * i / 4;
+      const value = max - (max - min) * i / 4;
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(width - right, y);
+      ctx.stroke();
+      ctx.textAlign = "right";
+      ctx.fillText(Math.round(value) + " ms", left - 8, y + 4);
+    }
+
+    const xFor = index => items.length === 1
+      ? left + chartW / 2
+      : left + chartW * index / (items.length - 1);
+    const yFor = value => top + chartH * (max - value) / (max - min);
+
+    ctx.strokeStyle = "#a5f36b";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    items.forEach((item, index) => {
+      const x = xFor(index), y = yFor(item.average);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    items.forEach((item, index) => {
+      const x = xFor(index), y = yFor(item.average);
+      ctx.fillStyle = "#a5f36b";
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.fillStyle = "#8c97a8";
+    ctx.textAlign = "left";
+    const first = new Date(items[0].timestamp);
+    const last = new Date(items[items.length - 1].timestamp);
+    ctx.fillText(first.toLocaleDateString("de-DE"), left, height - 13);
+    ctx.textAlign = "right";
+    ctx.fillText(last.toLocaleDateString("de-DE"), width - right, height - 13);
+    ctx.textAlign = "center";
+    ctx.fillText(items.length + " Einheiten", width / 2, height - 13);
+  }
+
+  function renderAll() {
+    renderGameStats();
+    renderOverview();
+    renderHistory();
+    renderChart();
+  }
+
+  function showGame(game) {
+    currentGame = game;
+    document.querySelectorAll(".tab").forEach(button => {
+      button.classList.toggle("active", button.dataset.game === game);
+    });
+
+    $("reactionGame").classList.toggle("hidden", game !== "reaction");
+    $("precisionGame").classList.toggle("hidden", game !== "precision");
+    $("shapesGame").classList.toggle("hidden", game !== "shapes");
+    $("gameTitle").innerHTML = `<h2>${GAME_NAMES[game]}</h2>`;
+    $("gameFeedback").textContent = "";
+    $("startButton").disabled = running;
+    renderGameStats();
+  }
+
+  function startGame() {
+    if (running) return;
+    running = true;
+    sessionId = makeId();
+    roundTimes = [];
+    roundCount = 0;
+    targetCount = 0;
+    shapeCorrect = 0;
+    $("gameFeedback").textContent = "";
+    $("startButton").disabled = true;
+    $("stopButton").disabled = false;
+
+    if (currentGame === "reaction") startReactionRound();
+    if (currentGame === "precision") startPrecisionRound();
+    if (currentGame === "shapes") startShapeRound();
+  }
+
+  function stopGame() {
+    if (!running) return;
+    running = false;
+    clearTimeout(reactionTimer);
+    reactionPhase = "idle";
+    $("reactionPad").className = "reaction-pad waiting";
+    $("reactionPad").textContent = "STARTEN";
+    $("reactionMessage").textContent = "Training abgebrochen";
+    $("reactionHint").textContent = "Deine bereits abgeschlossenen Versuche bleiben gespeichert.";
+    $("targetArea").innerHTML = "";
+    $("shapeArea").innerHTML = "";
+    $("startButton").disabled = false;
+    $("stopButton").disabled = true;
+    $("gameFeedback").textContent = "Training beendet. Gespeicherte Versuche bleiben erhalten.";
+    $("gameFeedback").className = "feedback";
+  }
+
+  function saveAttempt(ms) {
+    const item = {
+      id: makeId(),
+      gameKey: currentGame,
+      gameName: GAME_NAMES[currentGame],
+      ms: Math.round(ms),
+      timestamp: new Date().toISOString(),
+      sessionId
+    };
+    data.results.push(item);
+    saveData();
+    roundTimes.push(item.ms);
+    renderAll();
+  }
+
+  function finishGame() {
+    if (!roundTimes.length) {
+      running = false;
+      $("startButton").disabled = false;
+      $("stopButton").disabled = true;
+      return;
+    }
+
+    const session = {
+      id: sessionId,
+      gameKey: currentGame,
+      gameName: GAME_NAMES[currentGame],
+      timestamp: new Date().toISOString(),
+      count: roundTimes.length,
+      average: roundTimes.reduce((sum, value) => sum + value, 0) / roundTimes.length,
+      best: Math.min(...roundTimes)
+    };
+
+    data.sessions.push(session);
+    saveData();
+
+    running = false;
+    $("startButton").disabled = false;
+    $("stopButton").disabled = true;
+    $("gameFeedback").textContent =
+      "Training abgeschlossen · Durchschnitt: " + formatMs(session.average) +
+      " · Bestzeit: " + formatMs(session.best);
+    $("gameFeedback").className = "feedback good";
+    renderAll();
+  }
+
+  // Spiel 1: Lichtsignal
+  function startReactionRound() {
+    reactionPhase = "waiting";
+    $("reactionMessage").textContent = "Konzentriere dich.";
+    $("reactionHint").textContent = "Klicke erst bei Grün.";
+    $("reactionPad").className = "reaction-pad waiting";
+    $("reactionPad").textContent = "WARTEN";
+
+    const delay = 1200 + Math.random() * 2800;
+    reactionTimer = setTimeout(() => {
+      if (!running) return;
+      reactionPhase = "go";
+      reactionStartedAt = performance.now();
+      $("reactionMessage").textContent = "JETZT!";
+      $("reactionHint").textContent = "Klicke so schnell wie möglich.";
+      $("reactionPad").className = "reaction-pad go";
+      $("reactionPad").textContent = "KLICK";
+    }, delay);
+  }
+
+  $("reactionPad").addEventListener("click", () => {
+    if (!running || currentGame !== "reaction") return;
+
+    if (reactionPhase === "waiting") {
+      clearTimeout(reactionTimer);
+      reactionPhase = "false";
+      $("reactionPad").className = "reaction-pad false";
+      $("reactionPad").textContent = "ZU FRÜH";
+      $("reactionMessage").textContent = "Fehlstart";
+      $("reactionHint").textContent = "Warte auf das grüne Signal. Starte eine neue Runde.";
+      $("gameFeedback").textContent = "Zu früh geklickt. Dieser Fehlstart wird nicht als Reaktionsversuch gezählt.";
+      $("gameFeedback").className = "feedback bad";
+      running = false;
+      $("startButton").disabled = false;
+      $("stopButton").disabled = true;
+      return;
+    }
+
+    if (reactionPhase === "go") {
+      const ms = performance.now() - reactionStartedAt;
+      saveAttempt(ms);
+      roundCount++;
+      if (roundCount >= 1) {
+        $("reactionMessage").textContent = formatMs(ms);
+        $("reactionHint").textContent = "Deine Reaktionszeit wurde gespeichert.";
+        $("reactionPad").className = "reaction-pad waiting";
+        $("reactionPad").textContent = "FERTIG";
+        finishGame();
+      }
+    }
+  });
+
+  // Spiel 2: Zielpunkt
+  function startPrecisionRound() {
+    targetCount = 0;
+    $("precisionProgress").textContent = "0 / 5 Treffer";
+    $("precisionMessage").textContent = "Treffe den Zielpunkt.";
+    spawnTarget();
+  }
+
+  function spawnTarget() {
+    if (!running) return;
+    const area = $("targetArea");
+    area.innerHTML = "";
+    const target = document.createElement("button");
+    target.className = "target";
+    target.type = "button";
+    target.setAttribute("aria-label", "Zielpunkt treffen");
+
+    const maxX = Math.max(0, area.clientWidth - 42);
+    const maxY = Math.max(0, area.clientHeight - 42);
+    target.style.left = Math.floor(Math.random() * maxX) + "px";
+    target.style.top = Math.floor(Math.random() * maxY) + "px";
+    area.appendChild(target);
+    targetStartedAt = performance.now();
+
+    target.addEventListener("click", event => {
+      event.stopPropagation();
+      if (!running) return;
+      const ms = performance.now() - targetStartedAt;
+      saveAttempt(ms);
+      targetCount++;
+      $("precisionProgress").textContent = targetCount + " / 5 Treffer";
+
+      if (targetCount >= 5) {
+        area.innerHTML = "";
+        $("precisionMessage").textContent = "Einheit abgeschlossen";
+        finishGame();
+      } else {
+        spawnTarget();
+      }
+    });
+  }
+
+  // Spiel 3: Formenerkennung
+  function startShapeRound() {
+    shapeCorrect = 0;
+    $("shapeProgress").textContent = "0 / 5 richtige Antworten";
+    nextShape();
+  }
+
+  function nextShape() {
+    if (!running) return;
+    const shapes = ["circle", "square", "triangle"];
+    currentShape = shapes[Math.floor(Math.random() * shapes.length)];
+    const area = $("shapeArea");
+    area.innerHTML = "";
+    const shape = document.createElement("div");
+    shape.className = "shape " + currentShape;
+    area.appendChild(shape);
+    shapeStartedAt = performance.now();
+    $("shapeMessage").textContent = "Welche Form siehst du?";
+  }
+
+  document.querySelectorAll(".shapeChoice").forEach(button => {
+    button.addEventListener("click", () => {
+      if (!running || currentGame !== "shapes") return;
+      const answer = button.dataset.shape;
+
+      if (answer !== currentShape) {
+        $("gameFeedback").textContent = "Nicht richtig. Versuche es erneut.";
+        $("gameFeedback").className = "feedback bad";
+        return;
+      }
+
+      const ms = performance.now() - shapeStartedAt;
+      saveAttempt(ms);
+      shapeCorrect++;
+      $("shapeProgress").textContent = shapeCorrect + " / 5 richtige Antworten";
+      $("gameFeedback").textContent = "Richtig erkannt.";
+      $("gameFeedback").className = "feedback good";
+
+      if (shapeCorrect >= 5) {
+        $("shapeArea").innerHTML = "";
+        $("shapeMessage").textContent = "Einheit abgeschlossen";
+        finishGame();
+      } else {
+        nextShape();
+      }
+    });
+  });
+
+  function exportCSV() {
+    const rows = [
+      ["Typ", "Datum und Uhrzeit", "Spiel", "Versuche", "Reaktionszeit ms", "Durchschnitt ms", "Bestzeit ms", "Einheit"]
+    ];
+
+    data.results.forEach(item => {
+      rows.push([
+        "Versuch",
+        item.timestamp,
+        GAME_NAMES[item.gameKey] || item.gameName,
+        1,
+        item.ms,
+        "",
+        "",
+        item.sessionId || ""
+      ]);
+    });
+
+    data.sessions.forEach(item => {
+      rows.push([
+        "Trainingseinheit",
+        item.timestamp,
+        GAME_NAMES[item.gameKey] || item.gameName,
+        item.count,
+        "",
+        Math.round(item.average),
+        Math.round(item.best),
+        item.id
+      ]);
+    });
+
+    const csv = "\uFEFF" + rows.map(row =>
+      row.map(value => '"' + String(value ?? "").replace(/"/g, '""') + '"').join(";")
+    ).join("\r\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "reflex-lab-ergebnisse-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function resetAllData() {
+    const confirmed = confirm(
+      "Möchtest du wirklich alle gespeicherten Versuche und Trainingseinheiten löschen? Dieser Vorgang kann nicht rückgängig gemacht werden."
+    );
+    if (!confirmed) return;
+
+    data = { version: 2, results: [], sessions: [] };
+    saveData();
+    renderAll();
+    $("gameFeedback").textContent = "Alle gespeicherten Daten wurden gelöscht.";
+    $("gameFeedback").className = "feedback";
+  }
+
+  document.querySelectorAll(".tab").forEach(button => {
+    button.addEventListener("click", () => {
+      if (running) stopGame();
+      showGame(button.dataset.game);
+    });
+  });
+
+  $("startButton").addEventListener("click", startGame);
+  $("stopButton").addEventListener("click", stopGame);
+  $("exportButton").addEventListener("click", exportCSV);
+  $("resetButton").addEventListener("click", resetAllData);
+  $("chartGame").addEventListener("change", renderChart);
+  $("chartRange").addEventListener("change", renderChart);
+  window.addEventListener("resize", renderChart);
+
+  loadData();
+  showGame("reaction");
+  renderAll();
+})();
+</script>
+</body>
+</html>
