@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLICK//CLIMB</title>
+<style>
+:root{--bg:#090b12;--panel:#111522;--line:#242b3e;--text:#f3f6ff;--muted:#8992aa;--cyan:#65f3dc;--pink:#ff5d91;--gold:#ffd166}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#1b2940 0,transparent 55%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,Arial;display:grid;place-items:center;padding:18px}
+.wrap{width:min(920px,100%)}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.logo{font-weight:1000;letter-spacing:.16em;font-size:clamp(18px,4vw,28px)}.logo span{color:var(--cyan)}.tag{font-size:11px;letter-spacing:.18em;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}.stat,.arena-shell,.bottom{background:linear-gradient(145deg,#141a2a,#0e121d);border:1px solid var(--line);border-radius:14px}.stat{padding:12px 15px}.stat small{display:block;color:var(--muted);font-size:10px;letter-spacing:.15em;font-weight:800}.stat strong{font-size:clamp(19px,4vw,28px);font-variant-numeric:tabular-nums}.arena-shell{padding:10px;position:relative}.arena{height:min(56vh,480px);min-height:300px;background-color:#0a0e18;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:32px 32px;border-radius:9px;position:relative;overflow:hidden;cursor:crosshair;touch-action:manipulation}
+.arena:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at center,transparent 20%,#05070db0 100%);pointer-events:none}
+.target{position:absolute;width:54px;height:54px;border:0;border-radius:50%;transform:translate(-50%,-50%);cursor:crosshair;background:radial-gradient(circle,#fff 0 7%,var(--cyan) 9% 18%,#1b8d89 21% 28%,transparent 30%);filter:drop-shadow(0 0 9px #65f3dc99);animation:pop .12s ease-out;z-index:2}
+.target:before,.target:after{content:"";position:absolute;inset:3px;border:1px solid #65f3dc99;border-radius:50%}.target:after{inset:12px;border-color:#fff9}
+@keyframes pop{from{scale:.45;opacity:.2}to{scale:1;opacity:1}}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:#080b13b8;backdrop-filter:blur(5px);z-index:5;padding:20px}.overlay.hidden{display:none}.modal{max-width:440px}.modal h1{font-size:clamp(30px,7vw,54px);line-height:.95;margin:0 0 14px;letter-spacing:-.05em}.modal p{color:var(--muted);line-height:1.55;margin:0 0 22px}.btn{border:0;border-radius:8px;background:var(--cyan);color:#071311;font-weight:1000;letter-spacing:.12em;padding:14px 25px;cursor:pointer;box-shadow:0 0 25px #65f3dc33}.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}.hint{font-size:11px;color:var(--muted);margin-top:13px}
+.bottom{margin-top:12px;padding:12px 15px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}.bottom b{color:var(--text)}.bar{height:4px;background:#242b3e;border-radius:8px;margin-top:10px;overflow:hidden}.bar>div{height:100%;width:100%;background:var(--cyan);transition:width .1s linear}.flash{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:0}.flash.good{background:#65f3dc22;animation:flash .16s}@keyframes flash{to{opacity:1}}
+@media(max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}.arena{min-height:340px;height:54vh}.stat{padding:10px 12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="logo">CLICK<span>//</span>CLIMB</div><div class="tag">PRECISION TRAINING · v1.0</div></header>
+<section class="stats">
+ <div class="stat"><small>SCORE</small><strong id="score">00000</strong></div>
+ <div class="stat"><small>COMBO</small><strong id="combo">x0</strong></div>
+ <div class="stat"><small>TIME</small><strong id="time">30.0</strong></div>
+ <div class="stat"><small>BEST</small><strong id="best">00000</strong></div>
+</section>
+<div class="arena-shell">
+ <div class="arena" id="arena">
+  <div class="flash" id="flash"></div>
+  <div class="overlay" id="overlay"><div class="modal">
+   <div class="tag">ONE SHOT. NO EXCUSES.</div><h1>LOCK<br><span style="color:var(--cyan)">IN.</span></h1>
+   <p>Triff die Targets so schnell und präzise wie möglich. Jeder Treffer erhöht deinen Combo-Multiplikator. Verfehlst du, ist deine Combo weg.</p>
+   <button class="btn" id="start">START RUN</button><div class="hint">30 SEKUNDEN · MOUSE / TOUCH · LOCAL HIGHSCORE</div>
+  </div></div>
+ </div>
+</div>
+<div class="bar"><div id="progress"></div></div>
+<div class="bottom"><span>STATUS: <b id="status">READY</b></span><span>MISS: <b id="miss">0</b></span><span>ACCURACY: <b id="accuracy">100%</b></span><span>BEST COMBO: <b id="bestcombo">0</b></span></div>
+</div>
+<script>
+const $=id=>document.getElementById(id), arena=$('arena');
+let score=0,combo=0,bestCombo=0,miss=0,hits=0,shots=0,time=30,running=false,last=0,raf=0,target=null,spawnAt=0;
+let best=Number(localStorage.getItem('clickclimb-best')||0);$('best').textContent=String(best).padStart(5,'0');
+function update(){
+ $('score').textContent=String(score).padStart(5,'0');$('combo').textContent='x'+combo;
+ $('time').textContent=time.toFixed(1);$('miss').textContent=miss;
+ $('accuracy').textContent=(shots?Math.round(hits/shots*100):100)+'%';
+ $('bestcombo').textContent=bestCombo;$('best').textContent=String(best).padStart(5,'0');
+ $('progress').style.width=(time/30*100)+'%';
+}
+function removeTarget(){if(target){target.remove();target=null}}
+function spawn(){
+ removeTarget();if(!running)return;
+ const r=arena.getBoundingClientRect(),size=Math.max(24,54-Math.floor((30-time)/4)*3);
+ const pad=size/2+12,x=pad+Math.random()*(r.width-2*pad),y=pad+Math.random()*(r.height-2*pad);
+ target=document.createElement('button');target.className='target';target.setAttribute('aria-label','Target treffen');
+ target.style.width=size+'px';target.style.height=size+'px';target.style.left=x+'px';target.style.top=y+'px';
+ target.addEventListener('pointerdown',e=>{e.stopPropagation();if(!running)return;shots++;hits++;combo++;bestCombo=Math.max(bestCombo,combo);
+ const speedBonus=Math.max(0,Math.floor((30-time)/3));score+=10+Math.min(combo,20)*2+speedBonus;
+ $('flash').className='flash good';setTimeout(()=>$('flash').className='flash',170);
+ update();spawn();});
+ arena.appendChild(target);
+}
+function end(){
+ running=false;cancelAnimationFrame(raf);removeTarget();$('status').textContent='RUN COMPLETE';
+ if(score>best){best=score;localStorage.setItem('clickclimb-best',best)}
+ update();$('overlay').classList.remove('hidden');
+ $('overlay').innerHTML=`<div class="modal"><div class="tag">RUN COMPLETE</div><h1>${score.toLocaleString('de-DE')}<br><span style="color:var(--cyan)">POINTS</span></h1><p>Accuracy: <b>${shots?Math.round(hits/shots*100):100}%</b> · Best combo: <b>${bestCombo}</b> · Misses: <b>${miss}</b><br>${score>=best?'Neuer Highscore. Stark!':'Noch Luft nach oben. Nochmal.'}</p><button class="btn" id="again">PLAY AGAIN</button><div class="hint">DEIN BESTER SCORE BLEIBT GESPEICHERT</div></div>`;
+ $('again').addEventListener('click',start);
+}
+function tick(now){
+ if(!running)return;const dt=Math.min((now-last)/1000,.05);last=now;time=Math.max(0,time-dt);
+ if(time<=0){time=0;update();end();return}
+ update();raf=requestAnimationFrame(tick);
+}
+function start(){
+ score=0;combo=0;bestCombo=0;miss=0;hits=0;shots=0;time=30;running=true;
+ $('overlay').classList.add('hidden');$('status').textContent='IN RUN';update();spawn();last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);
+}
+arena.addEventListener('pointerdown',e=>{
+ if(!running||e.target.classList.contains('target'))return;
+ shots++;miss++;combo=0;update();
+});
+$('start').addEventListener('click',start);
+update();
+</script>
+</body>
+</html>
